@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Liberty Casino - USDT Slot (ERC20 + TRC20)</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #0d0d2b;
+    color: #fff;
+    text-align: center;
+    margin: 0; padding: 20px;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  h1 { margin-bottom: 0.2em; }
+  #slotMachine {
+    margin: 20px auto;
+    font-size: 60px;
+    letter-spacing: 10px;
+    user-select: none;
+  }
+  button {
+    margin: 10px 5px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background: #1a1a4d;
+    border: none;
+    border-radius: 4px;
+    color: #eee;
+    transition: background 0.3s ease;
+  }
+  button:hover { background: #3366cc; }
+  #log {
+    background: #111133;
+    color: #aaa;
+    padding: 10px;
+    width: 90%;
+    max-width: 600px;
+    height: 150px;
+    overflow-y: scroll;
+    margin-top: 20px;
+    text-align: left;
+    font-family: monospace;
+    font-size: 13px;
+    border-radius: 5px;
+  }
+  #walletStatus {
+    margin-top: 10px;
+    font-weight: bold;
+  }
+  #controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>Liberty Casino - USDT Slot Machine</h1>
+
+<div id="walletStatus">Wallet status: Not connected</div>
+
+<div>
+  <button onclick="connectMetaMask()">Connect MetaMask (ERC20)</button>
+  <button onclick="connectTronLink()">Connect TronLink (TRC20)</button>
+</div>
+
+<div id="slotMachine">🍒 🍋 🍉</div>
+<div>
+  <button onclick="spinSlots()">Spin 🎰</button>
+</div>
+
+<div id="controls">
+  <button onclick="depositERC20()">Deposit USDT (ERC20)</button>
+  <button onclick="withdrawERC20()">Withdraw USDT (ERC20)</button>
+  <button onclick="depositTRC20()">Deposit USDT (TRC20)</button>
+  <button onclick="withdrawTRC20()">Withdraw USDT (TRC20)</button>
+</div>
+
+<div id="log"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+
+<script>
+  let metaMaskAccount = null;
+  let tronLinkAccount = null;
+  let provider, signer;
+
+  const logDiv = document.getElementById('log');
+  const walletStatusDiv = document.getElementById('walletStatus');
+
+  const TRC20_TARGET_ADDRESS = 'johnbsdk5663030'; // Your placeholder TRC20 address; replace later with valid!
+
+  // For demo: USDT mainnet ERC20 contract (can replace with testnet)
+  const USDT_CONTRACT_ERC20 = '0xdAC17F958D2ee523a2206206994597C13D831ec7'; 
+  // USDT decimals = 6
+
+  function log(msg) {
+    console.log(msg);
+    logDiv.innerHTML += '[LOG] ' + msg + '<br>';
+    logDiv.scrollTop = logDiv.scrollHeight;
+  }
+
+  // --- Wallet Connections ---
+  async function connectMetaMask() {
+    if (!window.ethereum) {
+      alert('MetaMask is not installed!');
+      return;
+    }
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      metaMaskAccount = accounts[0];
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      signer = provider.getSigner();
+      walletStatusDiv.innerText = `MetaMask connected: ${metaMaskAccount}`;
+      log('MetaMask connected: ' + metaMaskAccount);
+    } catch (err) {
+      log('MetaMask connection error: ' + err.message);
+      alert('MetaMask connection rejected or error');
+    }
+  }
+
+  async function connectTronLink() {
+    if (!window.tronWeb || !window.tronLink) {
+      alert('TronLink wallet not found!');
+      return;
+    }
+    try {
+      await window.tronLink.request({ method: 'tron_requestAccounts' });
+      tronLinkAccount = window.tronWeb.defaultAddress.base58;
+      walletStatusDiv.innerText = `TronLink connected: ${tronLinkAccount}`;
+      log('TronLink connected: ' + tronLinkAccount);
+    } catch (err) {
+      log('TronLink connection error: ' + err.message);
+      alert('TronLink connection rejected or error');
+    }
+  }
+
+  // --- Slot machine demo ---
+
+  const slotSymbols = ['🍒', '🍋', '🍉', '🍇', '🍊', '⭐', '7️⃣'];
+  
+  function spinSlots() {
+    let result = [];
+    for (let i=0; i<3; i++) {
+      const idx = Math.floor(Math.random() * slotSymbols.length);
+      result.push(slotSymbols[idx]);
+    }
+    document.getElementById('slotMachine').innerText = result.join('  ');
+
+    if (result[0] === result[1] && result[1] === result[2]) {
+      log('🎉 Congratulations! You won with ' + result[0]);
+      alert('You won! 🎉');
+    } else {
+      log('Try again!');
+    }
+  }
+
+  // --- ERC20 USDT transfer (deposit/withdraw) demo ---
+
+  async function depositERC20() {
+    if (!metaMaskAccount) {
+      alert('Connect MetaMask first');
+      return;
+    }
+    // Transfer 1 USDT to your predefined deposit address (update as needed)
+    // For demo only: using your TRC20 placeholder here would be invalid
+    const toAddress = '0xYourDepositEthereumAddressHere0000000000000000'; // Replace with real
+    await sendUSDTERC20(toAddress, 1);
+  }
+
+  async function withdrawERC20() {
+    if (!metaMaskAccount) {
+      alert('Connect MetaMask first');
+      return;
+    }
+    // Withdraw 1 USDT back to your wallet (you can define logic)
+    const toAddress = metaMaskAccount;
+    await sendUSDTERC20(toAddress, 1);
+  }
+
+  async function sendUSDTERC20(toAddress, amountUSDT) {
+    try {
+      const usdtAbi = [
+        "function transfer(address to, uint amount) returns (bool)"
+      ];
+      const usdtContract = new ethers.Contract(USDT_CONTRACT_ERC20, usdtAbi, signer);
+      const amount = ethers.utils.parseUnits(amountUSDT.toString(), 6);
+      log(`Attempting ERC20 USDT transfer of ${amountUSDT} to ${toAddress}...`);
+      const tx = await usdtContract.transfer(toAddress, amount);
+      log('Transaction sent. Waiting for confirmation...');
+      await tx.wait();
+      log('ERC20 USDT transfer successful. Tx hash: ' + tx.hash);
+      alert('ERC20 USDT transfer complete');
+    } catch(e) {
+      log('ERC20 USDT transfer failed: ' + e.message);
+      alert('ERC20 transaction failed: ' + e.message);
+    }
+  }
+
+  // --- TRC20 USDT transfer (deposit/withdraw) demo ---
+
+  async function depositTRC20() {
+    if (!tronLinkAccount) {
+      alert('Connect TronLink first');
+      return;
+    }
+    await sendUSDTTRC20(TRC20_TARGET_ADDRESS, 1);
+  }
+
+  async function withdrawTRC20() {
+    if (!tronLinkAccount) {
+      alert('Connect TronLink first');
+      return;
+    }
+    // For demo: withdrawing 1 USDT to your TronLink wallet
+    await sendUSDTTRC20(tronLinkAccount, 1);
+  }
+
+  async function sendUSDTTRC20(toAddress, amountUSDT) {
+    try {
+      // USDT TRC20 contract example on Tron mainnet (change if you want testnet):
+      const USDT_TRC20_CONTRACT = 'TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf'; 
+      
+      const contract = await window.tronWeb.contract().at(USDT_TRC20_CONTRACT);
+      const amountSun = amountUSDT * 1e6; // 6 decimals
+      log(`Attempting TRC20 USDT transfer of ${amountUSDT} to ${toAddress}...`);
+      const tx = await contract.transfer(toAddress, amountSun).send();
+      log('TRC20 USDT transfer transaction sent.');
+      alert('TRC20 USDT transfer complete');
+    } catch (e) {
+      log('TRC20 USDT transfer failed: ' + e.message);
+      alert('TRC20 transaction failed: ' + e.message);
+    }
+  }
+</script>
+
+</body>
+</html>
